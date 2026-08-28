@@ -885,25 +885,7 @@
 
   <script>
     (function() {
-      // ------ بيانات أولية (مع صور و تصنيفات) ------
-      const initialMenu = [
-        { id: 1, name: 'مارغريتا', category: 'PIZZA', price: '1200', img: 'https://img.icons8.com/fluency/96/pizza.png' },
-        { id: 2, name: 'بيبروني', category: 'PIZZA', price: '1450', img: 'https://img.icons8.com/fluency/96/pizza.png' },
-        { id: 3, name: 'فاجيتا دجاج', category: 'FAJITAS', price: '1600', img: 'https://img.icons8.com/color/96/taco.png' },
-        { id: 4, name: 'فاجيتا لحم', category: 'FAJITAS', price: '1750', img: 'https://img.icons8.com/color/96/taco.png' },
-        { id: 5, name: 'بوتين كلاسيك', category: 'POUTINE', price: '1100', img: 'https://img.icons8.com/color/96/french-fries.png' },
-        { id: 6, name: 'بوتين جبنة', category: 'POUTINE', price: '1250', img: 'https://img.icons8.com/color/96/french-fries.png' },
-        { id: 7, name: 'كروك مسيو', category: 'CROUQUE MONSIEUR', price: '1400', img: 'https://img.icons8.com/color/96/croissant.png' },
-        { id: 8, name: 'كروك دجاج', category: 'CROUQUE MONSIEUR', price: '1500', img: 'https://img.icons8.com/color/96/croissant.png' },
-        { id: 9, name: 'فريت مشكل', category: 'FRIT', price: '900', img: 'https://img.icons8.com/color/96/french-fries.png' },
-        { id: 10, name: 'فريت بطاطس', category: 'FRIT', price: '750', img: 'https://img.icons8.com/color/96/french-fries.png' },
-        { id: 11, name: 'ساندويتش دجاج', category: 'SANDWICH', price: '1300', img: 'https://img.icons8.com/color/96/subway.png' },
-        { id: 12, name: 'ساندويتش تونة', category: 'SANDWICH', price: '1200', img: 'https://img.icons8.com/color/96/subway.png' },
-        { id: 13, name: 'تاكو لحم', category: 'TACOS', price: '1400', img: 'https://img.icons8.com/color/96/taco.png' },
-        { id: 14, name: 'تاكو دجاج', category: 'TACOS', price: '1350', img: 'https://img.icons8.com/color/96/taco.png' },
-        { id: 15, name: 'برجر كلاسيك', category: 'BURGER', price: '1600', img: 'https://img.icons8.com/color/96/hamburger.png' },
-        { id: 16, name: 'برجر تشيز', category: 'BURGER', price: '1750', img: 'https://img.icons8.com/color/96/hamburger.png' }
-      ];
+      // لا توجد أطباق افتراضية؛ القائمة تبدأ فارغة وتعرض فقط ما تضيفه أنت.
 
       // عناصر DOM
       const menuGrid = document.getElementById('menuGrid');
@@ -927,9 +909,20 @@
       const secretKey = document.getElementById('secretKey');
       const addDishBtn = document.getElementById('addDishBtn');
 
-      let menuItems = JSON.parse(localStorage.getItem('duoMenuItems') || 'null') || [...initialMenu];
+      // تنظيف الأطباق الافتراضية القديمة المحفوظة على الأجهزة السابقة،
+      // مع الحفاظ على الأطباق التي أضافها المستخدم (معرّفاتها تبدأ من 17).
+      let storedMenu = [];
+      try {
+        const savedMenu = JSON.parse(localStorage.getItem('duoMenuItems') || '[]');
+        if (Array.isArray(savedMenu)) storedMenu = savedMenu;
+      } catch (error) {
+        storedMenu = [];
+      }
+      const legacyDefaultIds = new Set(Array.from({ length: 16 }, (_, index) => index + 1));
+      let menuItems = storedMenu.filter(item => !legacyDefaultIds.has(Number(item.id)));
+      localStorage.setItem('duoMenuItems', JSON.stringify(menuItems));
       let reviews = JSON.parse(localStorage.getItem('duoReviews') || '[]');
-      let nextId = Math.max(16, ...menuItems.map(item => Number(item.id) || 0)) + 1;
+      let nextId = Math.max(0, ...menuItems.map(item => Number(item.id) || 0)) + 1;
       let currentFilter = 'all';
       let selectedDishImage = '';
 
@@ -1018,24 +1011,12 @@
           return;
         }
 
-        // صور افتراضية حسب التصنيف
-        const imgMap = {
-          'PIZZA': 'https://img.icons8.com/fluency/96/pizza.png',
-          'FAJITAS': 'https://img.icons8.com/color/96/taco.png',
-          'POUTINE': 'https://img.icons8.com/color/96/french-fries.png',
-          'CROUQUE MONSIEUR': 'https://img.icons8.com/color/96/croissant.png',
-          'FRIT': 'https://img.icons8.com/color/96/french-fries.png',
-          'SANDWICH': 'https://img.icons8.com/color/96/subway.png',
-          'TACOS': 'https://img.icons8.com/color/96/taco.png',
-          'BURGER': 'https://img.icons8.com/color/96/hamburger.png'
-        };
-
         const newItem = {
           id: nextId++,
           name: name,
           category: category,
           price: price,
-          img: selectedDishImage || imgMap[category] || 'https://img.icons8.com/fluency/96/pizza.png'
+          img: selectedDishImage || ''
         };
         menuItems.push(newItem);
         localStorage.setItem('duoMenuItems', JSON.stringify(menuItems));
